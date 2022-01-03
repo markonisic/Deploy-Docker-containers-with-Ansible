@@ -1,0 +1,36 @@
+---
+- hosts: docker
+  vars:
+    db_volume: mariadb
+    nextcloud: nextcloud
+  tasks:
+    - name: Deploy MariaDB server
+      docker_container:
+        image: mariadb
+        name: mariadb
+        command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb-file-per-table=1 --skip-innodb-read-only-compressed
+        volumes:
+          - "{{db_volume}}:/var/lib/mysql"
+        env:
+          MYSQL_ROOT_PASSWORD: somerootpassword
+          MYSQL_PASSWORD: somemysqlpassword
+          MYSQL_DATABASE: db
+          MYSQL_USER: mysqluser
+
+    - name: Deploy Nextcloud
+      docker_container:
+        image: nextcloud
+        name: nextcloud
+        restart_policy: always
+        ports:
+          - "8080:80"
+        links:
+          - "{{db_volume}}:/var/lib/mysql"
+        volumes:
+          - "{{nextcloud}}:/var/www/html"
+        env:
+          MYSQL_PASSWORD: somemysqlpassword
+          MYSQL_DATABASE: db
+          MYSQL_USER: mysqluser
+          MYSQL_HOST: mariadb
+
